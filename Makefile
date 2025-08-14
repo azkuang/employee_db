@@ -3,7 +3,7 @@ SRC = $(wildcard src/*.c)
 OBJ = $(patsubst src/%.c, obj/%.o, $(SRC))
 
 run : clean default
-	./$(TARGET) -n test -f bin/
+	./$(TARGET)
 
 default: $(TARGET)
 

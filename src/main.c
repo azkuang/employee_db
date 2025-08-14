@@ -6,6 +6,13 @@
 #define REQUIRE_PATH (1 << 1) // shifts 1 bit into position 1 0010
 // #define REQUIRED (REQUIRE_FILE | REQUIRE_PATH)
 
+void print_usage(char *argv[]) {
+	printf("Usage: %s -n -f <file_name>\n", argv[0]);
+	printf("\t -n - create new file.\n");
+	printf("\t -f - (required) path to file.\n");
+	return;
+}
+
 int main(int argc, char *argv[]) {
 	int opt = 0;
 	int require_input = 0;
@@ -31,11 +38,15 @@ int main(int argc, char *argv[]) {
 				break;
 			default:
 				printf("Unexpected input.\n");
+				return -1;
 		}
 	}
 
-	if ((REQUIRE_PATH & require_input) != REQUIRE_PATH)
-		printf("Error: -f (path) is required.\n");
+	if ((REQUIRE_PATH & require_input) != REQUIRE_PATH) {
+		print_usage(argv);
+		printf("Error: -f file path is missing.\n");
+		return -1;
+	}
 
 //	if ((require_input & REQUIRED) != REQUIRED) {
 //		printf("Error: missing required flags.\n");

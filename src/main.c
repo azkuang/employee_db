@@ -2,10 +2,13 @@
 #include <getopt.h>
 #include <stdbool.h>
 
-// #define REQUIRE_FILE (1 << 0) // shifts 1 bit into position 0 0001
-#define REQUIRE_PATH (1 << 1) // shifts 1 bit into position 1 0010
-// #define REQUIRED (REQUIRE_FILE | REQUIRE_PATH)
+#include "file.h"
+#include "parse.h"
+#include "status.h"
 
+#define REQUIRE_PATH (1 << 1) // shifts 1 bit into position 1 0010
+
+// Function to print program usage
 void print_usage(char *argv[]) {
 	printf("Usage: %s -n -f <file_name>\n", argv[0]);
 	printf("\t -n - create new file.\n");
@@ -14,19 +17,22 @@ void print_usage(char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
+	// Define command line variables
 	int opt = 0;
 	int require_input = 0;
 	bool new_file = false;
 	char *file_path = NULL;
-	
+
+	int dbfd = -1;
+	struct dbheader_t *dbheader = NULL;
+
+	// Command line controls
 	while ((opt = getopt(argc, argv, "nf:")) != -1) {
 		switch(opt) {
 			case 'n':
-				// do something with new file?
 				new_file = true;
 				break;
 			case 'f':
-				// file path?
 				file_path = optarg;
 				require_input |= REQUIRE_PATH;
 				break;
@@ -42,23 +48,35 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
+	// Check that required flags are set
 	if ((REQUIRE_PATH & require_input) != REQUIRE_PATH) {
 		print_usage(argv);
 		printf("Error: -f file path is missing.\n");
 		return -1;
 	}
 
-//	if ((require_input & REQUIRED) != REQUIRED) {
-//		printf("Error: missing required flags.\n");
-//		if (!(require_input & REQUIRE_FILE))
-//			printf("-n (file) is required.\n");
-//		if (!(require_input & REQUIRE_PATH))
-//			printf("-f (path) is required.\n");
-//		return -1;
-//	}
-
 	printf("File name: %d\n", new_file);
 	printf("File path: %s\n", file_path);
+
+	// Create new file if the new file flag is set
+	if (new_file) {
+		dbfd = create_new_file(file_path);
+		if (dbfd == STATUS_ERROR) {
+			printf("Unable to create file.\n");
+			return -1;
+		}
+
+		if (create_dbheader(dbfd, &dbheader) == STATUS_ERROR) {
+			printf("Error creating header.\n");
+			return -1;
+		}
+	} else {
+		dbfd = open_file(file_path);
+		if (dbfd == STATUS_ERROR) {
+			printf("Unable to open file.\n");
+			return -1;
+		}
+	}
 		
 	return 0;
 }

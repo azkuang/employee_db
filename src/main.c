@@ -55,9 +55,6 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	printf("File name: %d\n", new_file);
-	printf("File path: %s\n", file_path);
-
 	// Create new file if the new file flag is set
 	if (new_file) {
 		dbfd = create_new_file(file_path);
@@ -74,6 +71,11 @@ int main(int argc, char *argv[]) {
 		dbfd = open_file(file_path);
 		if (dbfd == STATUS_ERROR) {
 			printf("Unable to open file.\n");
+			return -1;
+		}
+
+		if (validate_dbheader(dbfd, &dbheader) != STATUS_SUCCESS) {
+			printf("Unable to validate headers.\n");
 			return -1;
 		}
 	}

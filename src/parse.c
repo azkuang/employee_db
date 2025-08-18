@@ -1,8 +1,58 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/stat.h>
 
 #include "parse.h"
 #include "status.h"
+
+int validate_dbheader(int fd, struct dbheader_t **header_out) {
+	if (fd == -1) {
+		printf("Invalid file provided.\n");
+		return STATUS_ERROR;
+	}
+
+	struct dbheader_t *header = calloc(1, sizeof(struct dbheader_t));
+	if (header == NULL) {
+		perror("calloc");
+		return STATUS_ERROR;
+	}
+
+	if (read(fd, header, sizeof(struct dbheader_t) != sizeof(struct dbheader_t))) {
+		perror("read");
+		return STATUS_ERROR;
+	}
+
+	// Convert endian-ness to match any system	
+	header->version = ntohs(header->version);
+	header->magic = ntohl(header->magic);
+	header->count = ntohs(header->count);
+	header->file_size = ntohs(header->file_size);
+
+	// Check that file given is the expected size
+	struct stat db_stat = {0};
+	fstat(fd, &db_stat);
+	if (header->file_size != db_stat.st_size) {
+		printf("Corrupted file given.\n");
+		return STATUS_ERROR;
+	}
+
+	// Valid headers
+	if (header->version != 1) {
+		printf("Incorrect version.\n");
+		return STATUS_ERROR;
+	}
+
+	if (header->magic != MAGIC_NUMBER) {
+		printf("Incorrect magic value.\n");
+		return STATUS_ERROR;
+	}
+
+	*header_out = header;
+
+	return STATUS_SUCCESS;
+}
 
 int create_dbheader(int fd, struct dbheader_t **header_out) {
 	struct dbheader_t *header = calloc(1, sizeof(struct dbheader_t));
